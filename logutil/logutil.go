@@ -22,6 +22,11 @@ type HTTPLogger struct {
 	logger log.Logger
 }
 
+// Middleware returns creates an HTTP logging middleware using LoggingFinalizer.
+func (l *HTTPLogger) Middleware(next http.Handler) http.Handler {
+	return finalizer.Middleware(l.LoggingFinalizer, next)
+}
+
 // LoggingFinalizer is a finalizer.ServerFinalizerFunc which logs information about a completed
 // HTTP Request.
 func (l *HTTPLogger) LoggingFinalizer(ctx context.Context, code int, r *http.Request) {
