@@ -5,6 +5,8 @@ package finalizer
 import (
 	"context"
 	"net/http"
+
+	kithttp "github.com/go-kit/kit/transport/http"
 )
 
 // Middleware calls the ServerFinalizerFunc at the end of an HTTP Request.
@@ -14,8 +16,8 @@ func Middleware(finalizer ServerFinalizerFunc, next http.Handler) http.Handler {
 
 		iw := &interceptingWriter{w, http.StatusOK, 0}
 		defer func() {
-			ctx = context.WithValue(ctx, contextKeyResponseHeaders, iw.Header())
-			ctx = context.WithValue(ctx, contextKeyResponseSize, iw.written)
+			ctx = context.WithValue(ctx, kithttp.ContextKeyResponseHeaders, iw.Header())
+			ctx = context.WithValue(ctx, kithttp.ContextKeyResponseSize, iw.written)
 			finalizer(ctx, iw.code, r)
 		}()
 		w = iw
@@ -29,29 +31,15 @@ type ServerFinalizerFunc func(ctx context.Context, code int, r *http.Request)
 
 // Header returns the HTTP Response headers from a ServerFinalizerFunc context.
 func Header(ctx context.Context) (http.Header, bool) {
-	header, ok := ctx.Value(contextKeyResponseHeaders).(http.Header)
+	header, ok := ctx.Value(kithttp.ContextKeyResponseHeaders).(http.Header)
 	return header, ok
 }
 
 // ResponseSize returns the written response size from a ServerFinalizerFunc context.
 func ResponseSize(ctx context.Context) (int, bool) {
-	size, ok := ctx.Value(contextKeyResponseSize).(int)
+	size, ok := ctx.Value(kithttp.ContextKeyResponseSize).(int)
 	return size, ok
 }
-
-type contextKey int
-
-const (
-
-	// contextKeyResponseHeaders is populated in the context whenever a
-	// ServerFinalizerFunc is specified. Its value is of type http.Header, and
-	// is captured only once the entire response has been written.
-	contextKeyResponseHeaders contextKey = iota
-
-	// contextKeyResponseSize is populated in the context whenever a
-	// ServerFinalizerFunc is specified. Its value is of type int64.
-	contextKeyResponseSize
-)
 
 type interceptingWriter struct {
 	http.ResponseWriter
