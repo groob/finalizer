@@ -35,12 +35,27 @@ func (l *HTTPLogger) LoggingFinalizer(ctx context.Context, code int, r *http.Req
 		host = r.RemoteAddr
 	}
 
+	url := *r.URL
+	uri := r.RequestURI
+
+	// Requests using the CONNECT method over HTTP/2.0 must use
+	// the authority field (aka r.Host) to identify the target.
+	// Refer: https://httpwg.github.io/specs/rfc7540.html#CONNECT
+	if r.ProtoMajor == 2 && r.Method == "CONNECT" {
+		uri = r.Host
+	}
+
+	if uri == "" {
+		uri = url.RequestURI()
+	}
+
 	keyvals := []interface{}{
 		"method", r.Method,
 		"status", code,
 		"proto", r.Proto,
 		"host", host,
 		"user_agent", r.UserAgent(),
+		"path", uri,
 	}
 
 	if referer := r.Referer(); referer != "" {
