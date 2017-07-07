@@ -27,7 +27,7 @@ func Middleware(finalizer ServerFinalizerFunc, next http.Handler) http.Handler {
 // ServerFinalizerFunc is a function executed at the end of an HTTP request.
 type ServerFinalizerFunc func(ctx context.Context, code int, r *http.Request)
 
-// Header returns the HTPP Response headers from a ServerFinalizerFunc context.
+// Header returns the HTTP Response headers from a ServerFinalizerFunc context.
 func Header(ctx context.Context) (http.Header, bool) {
 	header, ok := ctx.Value(contextKeyResponseHeaders).(http.Header)
 	return header, ok
